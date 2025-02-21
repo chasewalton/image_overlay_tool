@@ -6,7 +6,6 @@ import { ImageControlsComponent } from '../image-controls/image-controls.compone
 import { KeyboardShortcutsComponent } from '../keyboard-shortcuts/keyboard-shortcuts.component';
 import { KeyboardControlsService } from '../../services/keyboard-controls.service';
 import { CanvasRendererService } from '../../services/canvas-renderer.service';
-import { TransformControlsService, HandleType } from '../../services/transform-controls.service';
 import { ImageLayer } from '../../models/image-layer.model';
 
 interface Point {
@@ -45,8 +44,7 @@ export class ImageOverlayComponent implements AfterViewInit {
   private isDragging = false;
   private dragStart: Point | null = null;
   private initialPosition: Point | null = null;
-  private activeHandle: HandleType = HandleType.None;
-  
+
   isDividerDragging = false;
   private initialControlsHeight = 0;
   private initialDragY = 0;
@@ -54,13 +52,9 @@ export class ImageOverlayComponent implements AfterViewInit {
   maintainBackgroundAspectRatio = true;
   maintainOverlayAspectRatio = true;
 
-  lastMouseX: number = 0;
-  lastMouseY: number = 0;
-
   constructor(
     private keyboardControls: KeyboardControlsService,
-    private canvasRenderer: CanvasRendererService,
-    private transformControls: TransformControlsService
+    private canvasRenderer: CanvasRendererService
   ) {
     // Add window event listeners for divider dragging
     window.addEventListener('mousemove', this.onDividerDrag.bind(this));
@@ -71,52 +65,58 @@ export class ImageOverlayComponent implements AfterViewInit {
     this.containerRef.nativeElement.focus();
   }
 
-  onBackgroundImageSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.createImageLayer(input.files[0], true);
-    }
+  onBackgroundImageSelected(file: File) {
+    this.createImageLayer(file).then(layer => {
+      this.backgroundImage = layer;
+      this.updateCanvas();
+    });
   }
 
-  onOverlayImageSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.createImageLayer(input.files[0], false);
-    }
+  onOverlayImageSelected(file: File) {
+    this.createImageLayer(file).then(layer => {
+      this.overlayImage = layer;
+      this.updateCanvas();
+    });
   }
 
-  private createImageLayer(file: File, isBackground: boolean): Promise<void> {
+  private createImageLayer(file: File): Promise<ImageLayer> {
     return new Promise((resolve) => {
       const url = URL.createObjectURL(file);
       const img = new Image();
       
       img.onload = () => {
+        // Calculate initial dimensions to fit the container while maintaining aspect ratio
+        let width = img.width;
+        let height = img.height;
+        
+        // If image is larger than container, scale it down
+        if (width > this.containerWidth || height > this.containerHeight) {
+          const scaleX = this.containerWidth / width;
+          const scaleY = this.containerHeight / height;
+          const scale = Math.min(scaleX, scaleY);
+          
+          width *= scale;
+          height *= scale;
+        }
+
         const layer: ImageLayer = {
           file,
           url,
-          width: img.width,
-          height: img.height,
-          originalWidth: img.width,
-          originalHeight: img.height,
+          opacity: 1,
           x: 0,
           y: 0,
+          width,
+          height,
+          originalWidth: img.width,
+          originalHeight: img.height,
           rotation: 0,
-          opacity: 1,
-          visible: true,
           flipHorizontal: false,
           flipVertical: false,
           contrast: 1,
+          visible: true,
           inverted: false
         };
-
-        if (isBackground) {
-          this.backgroundImage = layer;
-        } else {
-          this.overlayImage = layer;
-        }
-        
-        this.updateCanvas();
-        resolve();
+        resolve(layer);
       };
       
       img.src = url;
@@ -156,93 +156,6 @@ export class ImageOverlayComponent implements AfterViewInit {
     this.updateCanvas();
   }
 
-  onMouseDown(event: MouseEvent) {
-    if (!this.overlayImage) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    
-    // Store initial mouse position
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    this.lastMouseX = x;
-    this.lastMouseY = y;
-    
-    // Convert to canvas coordinates for hit testing
-    const canvasX = x * (canvas.width / rect.width);
-    const canvasY = y * (canvas.height / rect.height);
-    
-    this.activeHandle = this.transformControls.getHandleAtPoint(canvasX, canvasY, this.overlayImage);
-    
-    if (this.activeHandle !== HandleType.None) {
-      this.isDragging = true;
-      this.dragStart = { x: canvasX, y: canvasY };
-      this.initialPosition = {
-        x: this.overlayImage.x,
-        y: this.overlayImage.y
-      };
-      return;
-    }
-
-    if (this.canvasRenderer.isClickOnOverlay(canvasX, canvasY, this.overlayImage)) {
-      this.isDragging = true;
-      this.dragStart = { x: canvasX, y: canvasY };
-      this.initialPosition = {
-        x: this.overlayImage.x,
-        y: this.overlayImage.y
-      };
-    }
-  }
-
-  onMouseMove(event: MouseEvent) {
-    if (!this.isDragging || !this.dragStart || !this.initialPosition || !this.overlayImage) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    
-    // Get current mouse position
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
-
-    // Calculate the change from last position
-    const moveX = currentX - this.lastMouseX;
-    const moveY = currentY - this.lastMouseY;
-
-    // Update last position
-    this.lastMouseX = currentX;
-    this.lastMouseY = currentY;
-
-    if (this.activeHandle !== HandleType.None) {
-      this.transformControls.updateTransform(
-        this.activeHandle,
-        moveX,
-        moveY,
-        this.overlayImage,
-        event.shiftKey || this.maintainOverlayAspectRatio
-      );
-    } else {
-      // Regular dragging - still relative to start position for smooth dragging
-      const startX = (this.dragStart.x / canvas.width) * rect.width;
-      const startY = (this.dragStart.y / canvas.height) * rect.height;
-      const deltaX = (currentX - startX) * (canvas.width / rect.width);
-      const deltaY = (currentY - startY) * (canvas.height / rect.height);
-
-      this.overlayImage.x = this.initialPosition.x + deltaX;
-      this.overlayImage.y = this.initialPosition.y + deltaY;
-    }
-
-    this.updateCanvas();
-  }
-
-  onMouseUp() {
-    this.isDragging = false;
-    this.dragStart = null;
-    this.initialPosition = null;
-    this.activeHandle = HandleType.None;
-    this.updateCanvas();
-  }
-
   updateCanvas() {
     if (!this.canvasRef) return;
     const canvas = this.canvasRef.nativeElement;
@@ -254,13 +167,7 @@ export class ImageOverlayComponent implements AfterViewInit {
     this.containerWidth = containerRect.width;
     this.containerHeight = containerRect.height - this.controlsHeight;
 
-    this.canvasRenderer.renderCanvas(
-      ctx,
-      canvas,
-      this.backgroundImage,
-      this.overlayImage,
-      this.activeHandle
-    );
+    this.canvasRenderer.renderCanvas(ctx, canvas, this.backgroundImage, this.overlayImage);
   }
 
   onKeyDown(event: KeyboardEvent) {
@@ -286,6 +193,49 @@ export class ImageOverlayComponent implements AfterViewInit {
       event.preventDefault();
       this.updateCanvas();
     }
+  }
+
+  onMouseDown(event: MouseEvent) {
+    if (!this.overlayImage) return;
+
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Check if click is on overlay
+    const clickedOnOverlay = this.canvasRenderer.isClickOnOverlay(x, y, this.overlayImage);
+    if (clickedOnOverlay) {
+      this.isDragging = true;
+      this.dragStart = { x, y };
+      this.initialPosition = {
+        x: this.overlayImage.x,
+        y: this.overlayImage.y
+      };
+    }
+  }
+
+  onMouseMove(event: MouseEvent) {
+    if (!this.isDragging || !this.dragStart || !this.initialPosition || !this.overlayImage) return;
+
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const currentX = event.clientX - rect.left;
+    const currentY = event.clientY - rect.top;
+
+    const deltaX = currentX - this.dragStart.x;
+    const deltaY = currentY - this.dragStart.y;
+
+    this.overlayImage.x = this.initialPosition.x + deltaX;
+    this.overlayImage.y = this.initialPosition.y + deltaY;
+
+    this.updateCanvas();
+  }
+
+  onMouseUp() {
+    this.isDragging = false;
+    this.dragStart = null;
+    this.initialPosition = null;
   }
 
   startDividerDrag(event: MouseEvent) {

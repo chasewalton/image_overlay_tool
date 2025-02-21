@@ -4,67 +4,6 @@
   height: 100vh;
   width: 100%;
   overflow: hidden;
-  background: #1a1a1a;
-}
-
-.top-controls {
-  background: #2a2a2a;
-  padding: 16px;
-  border-bottom: 1px solid #3a3a3a;
-}
-
-.upload-controls {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-}
-
-.upload-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.upload-group label {
-  font-weight: bold;
-}
-
-.upload-button {
-  position: relative;
-}
-
-.modern-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background: #3a3a3a;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modern-button:hover {
-  background: #4a4a4a;
-  transform: translateY(-1px);
-}
-
-.modern-button:active {
-  background: #333333;
-  transform: translateY(0);
-}
-
-.modern-button svg {
-  stroke-width: 1.5;
-  transition: all 0.2s ease;
-}
-
-.modern-button:hover svg {
-  stroke: #64B5F6;
 }
 
 .overlay-container {
@@ -89,18 +28,15 @@ canvas {
 
 .divider {
   width: 100%;
-  height: 8px;
+  height: 6px;
   background: #2a2a2a;
   cursor: ns-resize;
   position: relative;
 }
 
-.divider:hover {
+.divider:hover,
+.divider.dragging {
   background: #3a3a3a;
-}
-
-.divider:active {
-  background: #4a4a4a;
 }
 
 .divider::before {
@@ -111,40 +47,14 @@ canvas {
   transform: translate(-50%, -50%);
   width: 30px;
   height: 2px;
-  background: #2a2a2a;
+  background: #666;
   border-radius: 1px;
 }
 
 .controls {
-  background: #2a2a2a;
-  padding: 20px;
+  background: #1a1a1a;
+  padding: 1rem;
   overflow-y: auto;
-  min-height: 150px;
-  max-height: 500px;
-  color: #ffffff;
-}
-
-.control-group {
-  margin-bottom: 20px;
-}
-
-.control-group h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #64B5F6;
-}
-
-.control-row {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.control-row input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #64B5F6;
 }
 
 .images-upload {
@@ -157,12 +67,4 @@ canvas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
-}
-
-/* Ensure inputs and labels are properly aligned */
-input[type="file"] {
-  padding: 5px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
 }
