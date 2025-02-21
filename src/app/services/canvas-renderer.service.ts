@@ -21,12 +21,14 @@ export class CanvasRendererService {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background
-    this.drawImage(ctx, backgroundImage);
+    // Draw background first (not interactive)
+    if (backgroundImage) {
+      await this.drawImage(ctx, backgroundImage);
+    }
 
-    // Draw overlay if present
+    // Draw overlay on top (interactive)
     if (overlayImage && overlayImage.visible) {
-      this.drawImage(ctx, overlayImage);
+      await this.drawImage(ctx, overlayImage);
     }
   }
 

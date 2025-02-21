@@ -101,7 +101,8 @@ export class ImageOverlayComponent implements AfterViewInit {
           flipHorizontal: false,
           flipVertical: false,
           contrast: 1,
-          visible: true
+          visible: true,
+          inverted: false
         };
         resolve(layer);
       };
@@ -111,21 +112,29 @@ export class ImageOverlayComponent implements AfterViewInit {
   }
 
   onMouseWheel(event: WheelEvent) {
-    if (!this.backgroundImage) return;
+    if (!this.overlayImage) return;
 
     const container = event.currentTarget as HTMLElement;
     
     // Prevent default scrolling behavior
     event.preventDefault();
 
-    // Calculate new scroll position
-    if (event.deltaY > 0) {
-      // Scrolling down
-      container.scrollTop += this.scrollSpeed;
+    const delta = Math.sign(event.deltaY) * -this.scrollSpeed;
+    const scale = 1 + delta / 1000;
+
+    if (this.maintainOverlayAspectRatio) {
+      this.overlayImage.width *= scale;
+      this.overlayImage.height *= scale;
     } else {
-      // Scrolling up
-      container.scrollTop -= this.scrollSpeed;
+      // Scale width or height based on scroll direction
+      if (event.shiftKey) {
+        this.overlayImage.height *= scale;
+      } else {
+        this.overlayImage.width *= scale;
+      }
     }
+
+    this.updateCanvas();
   }
 
   @HostListener('window:resize')
@@ -167,7 +176,7 @@ export class ImageOverlayComponent implements AfterViewInit {
 
     const handled = this.keyboardControls.handleKeyPress(
       event.key, 
-      this.overlayImage, 
+      this.overlayImage,
       this.maintainOverlayAspectRatio
     );
 
@@ -185,7 +194,9 @@ export class ImageOverlayComponent implements AfterViewInit {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    if (this.canvasRenderer.isClickOnOverlay(x, y, this.overlayImage)) {
+    // Check if click is on overlay
+    const clickedOnOverlay = this.canvasRenderer.isClickOnOverlay(x, y, this.overlayImage);
+    if (clickedOnOverlay) {
       this.isDragging = true;
       this.dragStart = { x, y };
       this.initialPosition = {
