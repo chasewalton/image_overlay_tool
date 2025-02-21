@@ -59,52 +59,34 @@ export class CanvasRendererService {
 
   private async drawImage(ctx: CanvasRenderingContext2D, image: ImageLayer) {
     ctx.save();
-
-    // Apply transformations
+    
+    // Move to center of image position
     ctx.translate(image.x + image.width / 2, image.y + image.height / 2);
+    
+    // Apply rotation
     ctx.rotate((image.rotation * Math.PI) / 180);
-    ctx.scale(
-      image.flipHorizontal ? -1 : 1,
-      image.flipVertical ? -1 : 1
-    );
-    ctx.translate(-image.width / 2, -image.height / 2);
+    
+    // Apply flip
+    ctx.scale(image.flipHorizontal ? -1 : 1, image.flipVertical ? -1 : 1);
 
-    // Set global alpha for opacity
-    ctx.globalAlpha = image.opacity;
+    // Get cached image or load and cache it
+    let img = this.imageCache.get(image.url);
+    if (!img) {
+      img = await this.loadImage(image.url);
+      this.imageCache.set(image.url, img);
+    }
 
-    // Create a temporary canvas for applying filters
+    // Create temp canvas for effects
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = image.width;
     tempCanvas.height = image.height;
     const tempCtx = tempCanvas.getContext('2d');
-    
-    if (tempCtx) {
-      // Use cached image or load and cache it
-      let img = this.imageCache.get(image.url);
-      if (!img) {
-        img = await this.loadImage(image.url);
-        this.imageCache.set(image.url, img);
-      }
 
-      // Draw the image to the temporary canvas
+    if (tempCtx) {
+      // Draw the base image
       tempCtx.drawImage(img, 0, 0, image.width, image.height);
 
-      // Apply contrast
-      if (image.contrast !== 1) {
-        tempCtx.filter = `contrast(${image.contrast})`;
-        const tempCanvas2 = document.createElement('canvas');
-        tempCanvas2.width = image.width;
-        tempCanvas2.height = image.height;
-        const tempCtx2 = tempCanvas2.getContext('2d');
-        if (tempCtx2) {
-          tempCtx2.drawImage(tempCanvas, 0, 0);
-          tempCtx.clearRect(0, 0, image.width, image.height);
-          tempCtx.filter = 'none';
-          tempCtx.drawImage(tempCanvas2, 0, 0);
-        }
-      }
-
-      // Apply color inversion if enabled
+      // Apply inversion if enabled
       if (image.inverted) {
         const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
         const data = imageData.data;
@@ -116,10 +98,16 @@ export class CanvasRendererService {
         tempCtx.putImageData(imageData, 0, 0);
       }
 
-      // Draw the processed image to the main canvas
-      ctx.drawImage(tempCanvas, 0, 0);
+      // Draw the processed image
+      ctx.drawImage(
+        tempCanvas,
+        -image.width / 2,
+        -image.height / 2,
+        image.width,
+        image.height
+      );
     }
-
+    
     ctx.restore();
   }
 

@@ -55,6 +55,9 @@ export class KeyboardControlsService {
       case 'g':
         this.resizeOverlay(overlayImage, 1 + this.SIZE_STEP, maintainAspectRatio);
         break;
+      case 'h':
+        overlayImage.flipHorizontal = !overlayImage.flipHorizontal;
+        break;
       default:
         return false;
     }

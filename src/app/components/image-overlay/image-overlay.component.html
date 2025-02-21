@@ -1,13 +1,29 @@
 <div class="main-container">
   <div class="top-controls">
     <div class="upload-controls">
-      <div class="upload-group">
-        <label for="backgroundImage">Background Image:</label>
-        <input type="file" id="backgroundImage" (change)="onBackgroundImageSelected($event)" accept="image/*">
+      <div class="upload-button">
+        <input type="file" id="backgroundImage" (change)="onBackgroundImageSelected($event)" accept="image/*" #backgroundInput hidden>
+        <button class="modern-button" (click)="backgroundInput.click()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"></path>
+            <path d="M16 2v5h5"></path>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <path d="M21 15l-5-5L5 21"></path>
+          </svg>
+          Background Image
+        </button>
       </div>
-      <div class="upload-group">
-        <label for="overlayImage">Overlay Image:</label>
-        <input type="file" id="overlayImage" (change)="onOverlayImageSelected($event)" accept="image/*">
+      
+      <div class="upload-button">
+        <input type="file" id="overlayImage" (change)="onOverlayImageSelected($event)" accept="image/*" #overlayInput hidden>
+        <button class="modern-button" (click)="overlayInput.click()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"></path>
+            <path d="M8.5 13.5L11 16.5L14.5 12L19 17"></path>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          </svg>
+          Overlay Image
+        </button>
       </div>
     </div>
   </div>
