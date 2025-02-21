@@ -68,21 +68,16 @@ export class TransformControlsService {
 
   updateTransform(
     handle: HandleType,
-    startX: number,
-    startY: number,
-    currentX: number,
-    currentY: number,
+    moveX: number,
+    moveY: number,
     image: ImageLayer,
     maintainAspectRatio: boolean
   ): void {
-    const moveX = currentX - startX;
-    const moveY = currentY - startY;
-
     // Handle rotation
     if ([HandleType.Top, HandleType.Right, HandleType.Bottom, HandleType.Left].includes(handle)) {
       const centerX = image.x + image.width / 2;
       const centerY = image.y + image.height / 2;
-      let angle = (Math.atan2(currentY - centerY, currentX - centerX) * 180) / Math.PI;
+      let angle = (Math.atan2(moveY, moveX) * 180) / Math.PI;
       
       switch (handle) {
         case HandleType.Top: angle += 90; break;
@@ -98,7 +93,7 @@ export class TransformControlsService {
       return;
     }
 
-    // Handle resizing
+    // Handle resizing - now using actual mouse movement
     const aspectRatio = image.originalWidth / image.originalHeight;
 
     switch (handle) {
@@ -122,7 +117,7 @@ export class TransformControlsService {
           const change = Math.max(Math.abs(moveX), Math.abs(moveY)) * Math.sign(moveX);
           image.width += change;
           image.height = image.width / aspectRatio;
-          image.y = image.y - (change / aspectRatio);
+          image.y -= change / aspectRatio;
         } else {
           image.width += moveX;
           image.height -= moveY;
@@ -155,7 +150,7 @@ export class TransformControlsService {
         break;
     }
 
-    // Prevent tiny sizes
+    // Prevent tiny sizes while maintaining aspect ratio
     if (image.width < 20) {
       image.width = 20;
       if (maintainAspectRatio) {

@@ -54,6 +54,9 @@ export class ImageOverlayComponent implements AfterViewInit {
   maintainBackgroundAspectRatio = true;
   maintainOverlayAspectRatio = true;
 
+  lastMouseX: number = 0;
+  lastMouseY: number = 0;
+
   constructor(
     private keyboardControls: KeyboardControlsService,
     private canvasRenderer: CanvasRendererService,
@@ -159,9 +162,12 @@ export class ImageOverlayComponent implements AfterViewInit {
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
     
-    // Store raw screen coordinates
+    // Store initial mouse position
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
+    
+    this.lastMouseX = x;
+    this.lastMouseY = y;
     
     // Convert to canvas coordinates for hit testing
     const canvasX = x * (canvas.width / rect.width);
@@ -195,24 +201,30 @@ export class ImageOverlayComponent implements AfterViewInit {
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
     
-    // Get raw mouse positions in screen coordinates
+    // Get current mouse position
     const currentX = event.clientX - rect.left;
     const currentY = event.clientY - rect.top;
-    const startX = (this.dragStart.x / canvas.width) * rect.width;
-    const startY = (this.dragStart.y / canvas.height) * rect.height;
+
+    // Calculate the change from last position
+    const moveX = currentX - this.lastMouseX;
+    const moveY = currentY - this.lastMouseY;
+
+    // Update last position
+    this.lastMouseX = currentX;
+    this.lastMouseY = currentY;
 
     if (this.activeHandle !== HandleType.None) {
       this.transformControls.updateTransform(
         this.activeHandle,
-        startX,
-        startY,
-        currentX,
-        currentY,
+        moveX,
+        moveY,
         this.overlayImage,
         event.shiftKey || this.maintainOverlayAspectRatio
       );
     } else {
-      // Regular dragging
+      // Regular dragging - still relative to start position for smooth dragging
+      const startX = (this.dragStart.x / canvas.width) * rect.width;
+      const startY = (this.dragStart.y / canvas.height) * rect.height;
       const deltaX = (currentX - startX) * (canvas.width / rect.width);
       const deltaY = (currentY - startY) * (canvas.height / rect.height);
 
