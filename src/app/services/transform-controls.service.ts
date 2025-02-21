@@ -73,27 +73,38 @@ export class TransformControlsService {
     image: ImageLayer,
     maintainAspectRatio: boolean
   ): void {
-    // Handle rotation
+    // Handle rotation - now using incremental movement
     if ([HandleType.Top, HandleType.Right, HandleType.Bottom, HandleType.Left].includes(handle)) {
-      const centerX = image.x + image.width / 2;
-      const centerY = image.y + image.height / 2;
-      let angle = (Math.atan2(moveY, moveX) * 180) / Math.PI;
+      // Calculate rotation based on how far the mouse moved
+      const rotationChange = (Math.atan2(moveY, moveX) * 180) / Math.PI;
       
+      // Apply the change based on handle position
       switch (handle) {
-        case HandleType.Top: angle += 90; break;
-        case HandleType.Right: break;
-        case HandleType.Bottom: angle -= 90; break;
-        case HandleType.Left: angle += 180; break;
+        case HandleType.Top: 
+          image.rotation += rotationChange;
+          break;
+        case HandleType.Right:
+          image.rotation += rotationChange - 90;
+          break;
+        case HandleType.Bottom:
+          image.rotation += rotationChange + 180;
+          break;
+        case HandleType.Left:
+          image.rotation += rotationChange + 90;
+          break;
       }
       
-      image.rotation = (angle + 360) % 360;
+      // Normalize rotation to 0-360
+      image.rotation = ((image.rotation % 360) + 360) % 360;
+      
+      // Snap to 15 degree increments if maintaining aspect ratio
       if (maintainAspectRatio) {
         image.rotation = Math.round(image.rotation / 15) * 15;
       }
       return;
     }
 
-    // Handle resizing - now using actual mouse movement
+    // Handle resizing - using incremental movement (this part is working well)
     const aspectRatio = image.originalWidth / image.originalHeight;
 
     switch (handle) {
