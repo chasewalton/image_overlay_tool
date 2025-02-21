@@ -1,4 +1,17 @@
 <div class="main-container">
+  <div class="top-controls">
+    <div class="upload-controls">
+      <div class="upload-group">
+        <label for="backgroundImage">Background Image:</label>
+        <input type="file" id="backgroundImage" (change)="onBackgroundImageSelected($event)" accept="image/*">
+      </div>
+      <div class="upload-group">
+        <label for="overlayImage">Overlay Image:</label>
+        <input type="file" id="overlayImage" (change)="onOverlayImageSelected($event)" accept="image/*">
+      </div>
+    </div>
+  </div>
+
   <div class="overlay-container" 
        tabindex="0" 
        (keydown)="onKeyDown($event)"
@@ -22,20 +35,6 @@
   </div>
 
   <div class="controls" [style.height]="controlsHeight + 'px'">
-    <div class="images-upload">
-      <app-image-upload
-        label="Upload Background Image"
-        accept="image/png,image/jpeg,image/jpg"
-        (fileSelected)="onBackgroundImageSelected($event)">
-      </app-image-upload>
-      
-      <app-image-upload
-        label="Upload Overlay Image"
-        accept="image/png,image/jpeg,image/jpg"
-        (fileSelected)="onOverlayImageSelected($event)">
-      </app-image-upload>
-    </div>
-
     <div class="image-controls-container">
       <app-image-controls *ngIf="backgroundImage"
         title="Background Image"

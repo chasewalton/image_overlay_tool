@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ImageLayer } from '../models/image-layer.model';
+import { HandleType } from './transform-controls.service';
 
 @Injectable({
   providedIn: 'root'
@@ -7,12 +8,15 @@ import { ImageLayer } from '../models/image-layer.model';
 export class CanvasRendererService {
   private imageCache = new Map<string, HTMLImageElement>();
   private renderQueued = false;
+  private readonly HANDLE_SIZE = 10;
+  private readonly EDGE_SIZE = 20;
 
   async renderCanvas(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
     backgroundImage: ImageLayer,
-    overlayImage: ImageLayer | null
+    overlayImage: ImageLayer | null,
+    activeHandle: HandleType = HandleType.None
   ) {
     if (this.renderQueued) return;
     this.renderQueued = true;
@@ -42,6 +46,7 @@ export class CanvasRendererService {
       // Draw overlay on top (interactive)
       if (overlayImage && overlayImage.visible) {
         await this.drawImage(offscreenCtx, overlayImage);
+        this.drawTransformHandles(offscreenCtx, overlayImage, activeHandle);
       }
 
       // Copy the offscreen canvas to the visible canvas in one operation
@@ -114,6 +119,58 @@ export class CanvasRendererService {
       // Draw the processed image to the main canvas
       ctx.drawImage(tempCanvas, 0, 0);
     }
+
+    ctx.restore();
+  }
+
+  private drawTransformHandles(ctx: CanvasRenderingContext2D, image: ImageLayer, activeHandle: HandleType) {
+    ctx.save();
+    
+    // Transform context to match image rotation
+    ctx.translate(image.x + image.width / 2, image.y + image.height / 2);
+    ctx.rotate((image.rotation * Math.PI) / 180);
+    ctx.translate(-image.width / 2, -image.height / 2);
+
+    // Draw corner handles
+    const corners = [
+      { x: 0, y: 0, type: HandleType.TopLeft },
+      { x: image.width, y: 0, type: HandleType.TopRight },
+      { x: 0, y: image.height, type: HandleType.BottomLeft },
+      { x: image.width, y: image.height, type: HandleType.BottomRight }
+    ];
+
+    corners.forEach(corner => {
+      ctx.beginPath();
+      ctx.arc(corner.x, corner.y, this.HANDLE_SIZE / 2, 0, Math.PI * 2);
+      ctx.fillStyle = corner.type === activeHandle ? '#2196F3' : '#fff';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    // Draw edge handles
+    const edges = [
+      { x: image.width / 2, y: 0, type: HandleType.Top },
+      { x: image.width, y: image.height / 2, type: HandleType.Right },
+      { x: image.width / 2, y: image.height, type: HandleType.Bottom },
+      { x: 0, y: image.height / 2, type: HandleType.Left }
+    ];
+
+    edges.forEach(edge => {
+      ctx.beginPath();
+      ctx.rect(
+        edge.x - this.EDGE_SIZE / 2,
+        edge.y - this.EDGE_SIZE / 2,
+        this.EDGE_SIZE,
+        this.EDGE_SIZE
+      );
+      ctx.fillStyle = edge.type === activeHandle ? '#2196F3' : 'rgba(255, 255, 255, 0.5)';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+    });
 
     ctx.restore();
   }
