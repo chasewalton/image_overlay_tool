@@ -1,0 +1,132 @@
+.overlay-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.canvas-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 200px;
+}
+
+canvas {
+  background: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+  padding: 1rem;
+  background: #f5f5f5;
+  border-top: 1px solid #ddd;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.images-upload {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.image-controls-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.control-group {
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+
+    label {
+      min-width: 80px;
+      margin-right: 0.5rem;
+    }
+
+    input[type="number"],
+    input[type="range"] {
+      flex: 1;
+      min-width: 60px;
+      padding: 0.25rem;
+    }
+
+    input[type="checkbox"] {
+      margin: 0;
+    }
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0.25rem 0;
+
+    &:hover {
+      background: #0056b3;
+    }
+  }
+}
+
+.keyboard-shortcuts {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+  h4 {
+    margin: 0 0 1rem 0;
+  }
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.key {
+  padding: 0.2rem 0.5rem;
+  background: #eee;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}

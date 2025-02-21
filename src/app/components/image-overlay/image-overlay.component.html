@@ -1,0 +1,59 @@
+<div class="overlay-container" 
+     tabindex="0" 
+     (keydown)="onKeyDown($event)"
+     #container>
+  <div class="canvas-container" 
+       [style.height]="containerHeight + 'px'"
+       [style.width]="containerWidth + 'px'"
+       (wheel)="onMouseWheel($event)">
+    <canvas #canvas
+            (mousedown)="onMouseDown($event)"
+            (mousemove)="onMouseMove($event)"
+            (mouseup)="onMouseUp()"
+            (mouseleave)="onMouseUp()">
+    </canvas>
+  </div>
+
+  <div class="controls">
+    <div class="images-upload">
+      <app-image-upload
+        label="Upload Background Image"
+        accept="image/png,image/jpeg,image/jpg"
+        (fileSelected)="onBackgroundImageSelected($event)">
+      </app-image-upload>
+      
+      <app-image-upload
+        label="Upload Overlay Image"
+        accept="image/png,image/jpeg,image/jpg"
+        (fileSelected)="onOverlayImageSelected($event)">
+      </app-image-upload>
+    </div>
+
+    <div class="image-controls-container">
+      <app-image-controls *ngIf="backgroundImage"
+        title="Background Image"
+        [image]="backgroundImage"
+        [maintainAspectRatio]="maintainBackgroundAspectRatio"
+        (imageChange)="updateCanvas()"
+        (aspectRatioChange)="maintainBackgroundAspectRatio = $event; updateCanvas()"
+        (resetSize)="resetBackgroundSize()">
+      </app-image-controls>
+
+      <app-image-controls *ngIf="overlayImage"
+        title="Overlay Image"
+        [image]="overlayImage"
+        [isOverlay]="true"
+        [maintainAspectRatio]="maintainOverlayAspectRatio"
+        (imageChange)="updateCanvas()"
+        (aspectRatioChange)="maintainOverlayAspectRatio = $event; updateCanvas()"
+        (resetSize)="resetOverlaySize()"
+        (resetRotation)="resetRotation()"
+        (flipHorizontal)="toggleFlip('horizontal')"
+        (flipVertical)="toggleFlip('vertical')">
+      </app-image-controls>
+    </div>
+
+    <app-keyboard-shortcuts *ngIf="overlayImage">
+    </app-keyboard-shortcuts>
+  </div>
+</div>
