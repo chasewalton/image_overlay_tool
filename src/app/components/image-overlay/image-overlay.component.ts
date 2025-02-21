@@ -31,7 +31,11 @@ export class ImageOverlayComponent implements AfterViewInit {
   @ViewChild('container', { static: false }) containerRef!: ElementRef<HTMLDivElement>;
   
   containerWidth = window.innerWidth;
-  containerHeight = window.innerHeight - 200; // Leave space for controls
+  containerHeight = window.innerHeight - 200;
+  controlsHeight = 200;
+  minControlsHeight = 150;
+  maxControlsHeight = 500;
+
   scrollSpeed = 50; // Pixels per scroll event
 
   backgroundImage: ImageLayer | null = null;
@@ -41,13 +45,21 @@ export class ImageOverlayComponent implements AfterViewInit {
   private dragStart: Point | null = null;
   private initialPosition: Point | null = null;
 
+  isDividerDragging = false;
+  private initialControlsHeight = 0;
+  private initialDragY = 0;
+
   maintainBackgroundAspectRatio = true;
   maintainOverlayAspectRatio = true;
 
   constructor(
     private keyboardControls: KeyboardControlsService,
     private canvasRenderer: CanvasRendererService
-  ) {}
+  ) {
+    // Add window event listeners for divider dragging
+    window.addEventListener('mousemove', this.onDividerDrag.bind(this));
+    window.addEventListener('mouseup', this.stopDividerDrag.bind(this));
+  }
 
   ngAfterViewInit() {
     this.containerRef.nativeElement.focus();
@@ -140,23 +152,20 @@ export class ImageOverlayComponent implements AfterViewInit {
   @HostListener('window:resize')
   onResize() {
     this.containerWidth = window.innerWidth;
-    this.containerHeight = window.innerHeight - 200;
+    this.containerHeight = window.innerHeight - this.controlsHeight;
     this.updateCanvas();
   }
 
   updateCanvas() {
-    if (!this.canvasRef || !this.backgroundImage) return;
-
+    if (!this.canvasRef) return;
     const canvas = this.canvasRef.nativeElement;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !this.backgroundImage) return;
 
-    // Set minimum container size to window dimensions
-    const container = canvas.parentElement;
-    if (container) {
-      container.style.minWidth = `${this.containerWidth}px`;
-      container.style.minHeight = `${this.containerHeight}px`;
-    }
+    // Update canvas size to match container
+    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
+    this.containerWidth = containerRect.width;
+    this.containerHeight = containerRect.height - this.controlsHeight;
 
     this.canvasRenderer.renderCanvas(ctx, canvas, this.backgroundImage, this.overlayImage);
   }
@@ -227,6 +236,31 @@ export class ImageOverlayComponent implements AfterViewInit {
     this.isDragging = false;
     this.dragStart = null;
     this.initialPosition = null;
+  }
+
+  startDividerDrag(event: MouseEvent) {
+    this.isDividerDragging = true;
+    this.initialControlsHeight = this.controlsHeight;
+    this.initialDragY = event.clientY;
+    event.preventDefault();
+  }
+
+  private onDividerDrag = (event: MouseEvent) => {
+    if (!this.isDividerDragging) return;
+
+    const deltaY = this.initialDragY - event.clientY;
+    let newHeight = this.initialControlsHeight + deltaY;
+
+    // Constrain the height within min and max bounds
+    newHeight = Math.max(this.minControlsHeight, Math.min(this.maxControlsHeight, newHeight));
+    
+    this.controlsHeight = newHeight;
+    this.containerHeight = window.innerHeight - newHeight;
+    this.updateCanvas();
+  }
+
+  private stopDividerDrag = () => {
+    this.isDividerDragging = false;
   }
 
   toggleFlip(direction: 'horizontal' | 'vertical') {

@@ -1,20 +1,27 @@
-<div class="overlay-container" 
-     tabindex="0" 
-     (keydown)="onKeyDown($event)"
-     #container>
-  <div class="canvas-container" 
-       [style.height]="containerHeight + 'px'"
-       [style.width]="containerWidth + 'px'"
-       (wheel)="onMouseWheel($event)">
-    <canvas #canvas
-            (mousedown)="onMouseDown($event)"
-            (mousemove)="onMouseMove($event)"
-            (mouseup)="onMouseUp()"
-            (mouseleave)="onMouseUp()">
-    </canvas>
+<div class="main-container">
+  <div class="overlay-container" 
+       tabindex="0" 
+       (keydown)="onKeyDown($event)"
+       #container>
+    <div class="canvas-container" 
+         [style.height]="containerHeight + 'px'"
+         [style.width]="containerWidth + 'px'"
+         (wheel)="onMouseWheel($event)">
+      <canvas #canvas
+              (mousedown)="onMouseDown($event)"
+              (mousemove)="onMouseMove($event)"
+              (mouseup)="onMouseUp()"
+              (mouseleave)="onMouseUp()">
+      </canvas>
+    </div>
   </div>
 
-  <div class="controls">
+  <div class="divider" 
+       (mousedown)="startDividerDrag($event)"
+       [class.dragging]="isDividerDragging">
+  </div>
+
+  <div class="controls" [style.height]="controlsHeight + 'px'">
     <div class="images-upload">
       <app-image-upload
         label="Upload Background Image"

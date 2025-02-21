@@ -5,31 +5,51 @@ import { ImageLayer } from '../models/image-layer.model';
   providedIn: 'root'
 })
 export class CanvasRendererService {
+  private imageCache = new Map<string, HTMLImageElement>();
+  private renderQueued = false;
+
   async renderCanvas(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
     backgroundImage: ImageLayer,
     overlayImage: ImageLayer | null
   ) {
-    // Calculate total required canvas size
-    const totalBounds = this.calculateTotalBounds(backgroundImage, overlayImage);
-    
-    // Set canvas size
-    canvas.width = totalBounds.width;
-    canvas.height = totalBounds.height;
+    if (this.renderQueued) return;
+    this.renderQueued = true;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Use requestAnimationFrame for smooth rendering
+    requestAnimationFrame(async () => {
+      // Create offscreen canvas for double buffering
+      const offscreenCanvas = document.createElement('canvas');
+      const offscreenCtx = offscreenCanvas.getContext('2d');
+      if (!offscreenCtx) return;
 
-    // Draw background first (not interactive)
-    if (backgroundImage) {
-      await this.drawImage(ctx, backgroundImage);
-    }
+      // Calculate total required canvas size
+      const totalBounds = this.calculateTotalBounds(backgroundImage, overlayImage);
+      
+      // Set both canvases to the same size
+      canvas.width = offscreenCanvas.width = totalBounds.width;
+      canvas.height = offscreenCanvas.height = totalBounds.height;
 
-    // Draw overlay on top (interactive)
-    if (overlayImage && overlayImage.visible) {
-      await this.drawImage(ctx, overlayImage);
-    }
+      // Clear offscreen canvas
+      offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+      // Draw background first (not interactive)
+      if (backgroundImage) {
+        await this.drawImage(offscreenCtx, backgroundImage);
+      }
+
+      // Draw overlay on top (interactive)
+      if (overlayImage && overlayImage.visible) {
+        await this.drawImage(offscreenCtx, overlayImage);
+      }
+
+      // Copy the offscreen canvas to the visible canvas in one operation
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(offscreenCanvas, 0, 0);
+
+      this.renderQueued = false;
+    });
   }
 
   private async drawImage(ctx: CanvasRenderingContext2D, image: ImageLayer) {
@@ -54,8 +74,14 @@ export class CanvasRendererService {
     const tempCtx = tempCanvas.getContext('2d');
     
     if (tempCtx) {
+      // Use cached image or load and cache it
+      let img = this.imageCache.get(image.url);
+      if (!img) {
+        img = await this.loadImage(image.url);
+        this.imageCache.set(image.url, img);
+      }
+
       // Draw the image to the temporary canvas
-      const img = await this.loadImage(image.url);
       tempCtx.drawImage(img, 0, 0, image.width, image.height);
 
       // Apply contrast
@@ -81,7 +107,6 @@ export class CanvasRendererService {
           data[i] = 255 - data[i];         // Red
           data[i + 1] = 255 - data[i + 1]; // Green
           data[i + 2] = 255 - data[i + 2]; // Blue
-          // Alpha channel remains unchanged
         }
         tempCtx.putImageData(imageData, 0, 0);
       }
